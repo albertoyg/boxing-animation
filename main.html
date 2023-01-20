@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+<script id="vertex-shader" type="x-shader/x-vertex">#version 300 es
+
+in vec4 vPosition;
+in vec3 vNormal;
+in vec2 vTexCoord;
+
+
+uniform mat4 modelViewMatrix;
+uniform mat4 normalMatrix;
+uniform mat4 projectionMatrix;
+uniform vec4 lightPosition;
+uniform mat4 viewMatrix;
+
+out vec3 fPos;
+out vec3 fLpos;
+out vec3 fN;
+out vec2 fTexCoord;
+out vec3 fnorm;
+
+void
+main()
+{
+fnorm = vNormal; 
+// Transforms vertex position into eye coordinates 
+fPos = (modelViewMatrix * vPosition).xyz;
+
+// Transforms vertex normal into eye coordinates (pre-fragment)
+fN = normalize((normalMatrix*vec4(vNormal,0.0)).xyz);
+
+// Transforms light position into eye coordinates 
+fLpos = lightPosition.xyz;
+
+// Transform vertex position in clip coordinates 
+gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+
+// send texture coordinates from vertex to  fragment shader
+fTexCoord = vTexCoord;
+
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">#version 300 es
+
+precision mediump float;
+
+uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+uniform vec3 viewPos;
+uniform float shininess; 
+
+
+uniform sampler2D curtexture;
+uniform int useTextures;
+
+
+in vec3 fPos;
+in vec3 fLpos;
+in vec3 fN;
+in vec2 fTexCoord;
+in vec3 fnorm;
+
+
+
+layout(location=0) out vec4 fragColor ;
+
+vec4 ads(vec3 pos, vec3 lpos, vec3 N){
+    // normalize normal to get vector 
+    vec3 K = normalize(fnorm);
+
+    // calculating L, the direction vector (the difference) between the lights position and the fragments position
+    vec3 L = normalize(lpos - pos);
+
+    // calculate vector to offset position of fragments 
+    vec3 V = normalize(-pos.xyz); 
+
+    // calculating halfway vector between L and V 
+    vec3 H = normalize(L+V);
+
+    // calculate the diffuse impact of the light on the current fragment, using normal vector and light position vector to keep light still
+    float lightDotNormal = max( dot(K, L), 0.0 );
+
+    // declare diffuse as a vector 
+    vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
+
+    // multiply lightdornormal with light colour 
+    diffuse = lightDotNormal*diffuseProduct;
+
+
+    // declare specular as a vector 
+    vec4 specular = vec4(0.0, 0.0, 0.0, 1.0);
+
+    // get ambient lighting colour from main.js
+    vec4 ambient = ambientProduct;
+    
+    // calculate the ambient impact with shininess. Im multiplying with N to achieve the Phong shine with pixels 
+    float Ks = pow( max(dot(H, N), 0.0), shininess );
+
+    // multiply impact with abient 
+    specular = Ks * specularProduct;
+
+    //corrects light if value is negative
+    if( dot(K, L) < 0.0 ) {
+    specular = vec4(0.0, 0.0, 0.0, 1.0);    
+    }
+
+    // combine the elements for the light 
+    vec4 color = (ambient + diffuse + specular);
+    color.a = 1.0 ;
+    return color;
+}
+
+void
+main()
+{
+    // if toggle textures is on, then use texture for colour 
+	if( useTextures == 1)
+    {
+        fragColor = texture( curtexture, fTexCoord ) ;
+    }
+	else
+    // otherwise use the specified colour in setColor()
+	{
+        fragColor = ads(fPos,fLpos,fN);
+	}
+}
+
+
+
+
+</script>
+
+<script type="text/javascript" src="Common/webgl-utils.js"></script>
+<script type="text/javascript" src="Common/initShaders.js"></script>
+
+<script type="text/javascript" src="Common/MV.js"></script>
+<script type="text/javascript" src="objects.js"></script>
+<script type="text/javascript" src="main.js"></script>
+
+
+<body>
+<canvas id="gl-canvas" width="512" height="512">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+
+<br/>
+<br/>
+
+<div id="animToggleButton">
+    <input id="animToggleButton" type="button" value="Toggle Animation"
+    />
+
+</div><br/>
+
+
+</body>
+</html>
+
