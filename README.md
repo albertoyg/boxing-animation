@@ -1,11 +1,11 @@
-#Boxing Animation 🥊
+# Boxing Animation 🥊
 
 I took on the challenge of creating this animation without any pre-made assets. Each element in the animation designed using vector tools. 
 
-##Demo
+## Demo
 [View the Boxing Animation Demo](https://singular-otter-9a2ee3.netlify.app/)
 
-##Technologies Used
+## Technologies Used
 - Vector Graphics
 - JavaScript
 - HTML/CSS
